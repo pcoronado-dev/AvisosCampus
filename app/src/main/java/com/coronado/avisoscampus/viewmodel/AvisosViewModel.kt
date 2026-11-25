@@ -21,7 +21,7 @@ class AvisosViewModel(private val repo: AvisosRepository) : ViewModel() {
     val avisos: StateFlow<List<Aviso>> = repo.avisos
 
     // Evento de una sola vez: "muestra esta notificación".
-    // El ViewModel NO tiene Context: lo recibe la pantalla.
+    // El ViewModel NO tiene Context: lo recibe la pantalla que invoca Notificador con el canal adecuado.
     private val _eventos = MutableSharedFlow<Aviso>()
     val eventos: SharedFlow<Aviso> = _eventos.asSharedFlow()
 
@@ -31,21 +31,24 @@ class AvisosViewModel(private val repo: AvisosRepository) : ViewModel() {
     private val _mensaje = MutableStateFlow<String?>(null)
     val mensaje: StateFlow<String?> = _mensaje.asStateFlow()
 
-    // Paso 2
     fun permisoRespondido(concedido: Boolean) {
         _permiso.value = if (concedido) PermisoUi.Concedido else PermisoUi.Denegado
     }
+
+    // Evento general -> Canal Avisos
     fun avisarAhora() {
         viewModelScope.launch {
             val aviso = repo.registrar("Tarea lista", "Tu entrega fue registrada", Origen.BOTON)
             _eventos.emit(aviso)
         }
     }
+
     private var trabajo: Job? = null
 
     private val _faltan = MutableStateFlow<Int?>(null)
     val faltan: StateFlow<Int?> = _faltan.asStateFlow()
 
+    // Evento de recordatorio -> Canal Urgentes
     fun recordarEn(segundos: Int = 10) {
         if (trabajo?.isActive == true) return
         trabajo = viewModelScope.launch {
@@ -77,6 +80,7 @@ class AvisosViewModel(private val repo: AvisosRepository) : ViewModel() {
         _escuchandoAvion.value = valor
     }
 
+    // Evento general -> Canal Avisos
     fun alCambiarModoAvion(activo: Boolean) {
         viewModelScope.launch {
             val aviso = repo.registrar(
@@ -87,6 +91,7 @@ class AvisosViewModel(private val repo: AvisosRepository) : ViewModel() {
             _eventos.emit(aviso)
         }
     }
+
     fun noSePudoMostrar() {
         _mensaje.value = "Sin permiso: el aviso se guardó en el historial, pero no se mostró"
     }

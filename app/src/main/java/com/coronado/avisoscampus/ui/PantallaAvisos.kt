@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.coronado.avisoscampus.model.Origen
 import com.coronado.avisoscampus.model.PermisoUi
 import com.coronado.avisoscampus.notificacion.Notificador
 import com.coronado.avisoscampus.receiver.ModoAvionReceiver
@@ -58,7 +59,7 @@ fun PantallaAvisos(vm: AvisosViewModel) {
     val escuchando by vm.escuchandoAvion.collectAsState()
     val avisos by vm.avisos.collectAsState()
 
-    // Paso 2: permiso
+    // Permiso de notificaciones
     val lanzador = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { concedido ->
@@ -71,17 +72,20 @@ fun PantallaAvisos(vm: AvisosViewModel) {
         }
     }
 
-    // Eventos: el ViewModel pide, la pantalla (con Context) muestra
+    // Eventos: el ViewModel pide, la pantalla (con Context) muestra invocando Notificador
     LaunchedEffect(Unit) {
         vm.eventos.collect { aviso ->
-            val mostrado = Notificador.mostrar(contexto, aviso)
+            val mostrado = when (aviso.origen) {
+                Origen.RECORDATORIO -> Notificador.mostrarUrgente(contexto, aviso)
+                else -> Notificador.mostrarGeneral(contexto, aviso)
+            }
             if (!mostrado) {
                 vm.noSePudoMostrar()
             }
         }
     }
 
-    // Paso 6: receptor del modo avión
+    // Receptor del modo avión
     DisposableEffect(escuchando) {
         if (escuchando) {
             val receptor = ModoAvionReceiver { activo -> vm.alCambiarModoAvion(activo) }
