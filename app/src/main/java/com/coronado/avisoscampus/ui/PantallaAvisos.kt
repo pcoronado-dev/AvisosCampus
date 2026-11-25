@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -52,6 +53,7 @@ fun PantallaAvisos(vm: AvisosViewModel) {
     val contexto = LocalContext.current
 
     val permiso by vm.permiso.collectAsState()
+    val mensaje by vm.mensaje.collectAsState()
     val faltan by vm.faltan.collectAsState()
     val escuchando by vm.escuchandoAvion.collectAsState()
     val avisos by vm.avisos.collectAsState()
@@ -72,8 +74,10 @@ fun PantallaAvisos(vm: AvisosViewModel) {
     // Eventos: el ViewModel pide, la pantalla (con Context) muestra
     LaunchedEffect(Unit) {
         vm.eventos.collect { aviso ->
-            Notificador.mostrar(contexto, aviso)
-            // TODO Paso 8: si no se mostró, avisar al ViewModel
+            val mostrado = Notificador.mostrar(contexto, aviso)
+            if (!mostrado) {
+                vm.noSePudoMostrar()
+            }
         }
     }
 
@@ -112,7 +116,7 @@ fun PantallaAvisos(vm: AvisosViewModel) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Permiso de notificaciones (Paso 2)
+            // Permiso de notificaciones
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -144,10 +148,34 @@ fun PantallaAvisos(vm: AvisosViewModel) {
                     }) {
                         Text("Permitir notificaciones")
                     }
+                    if (mensaje != null) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.errorContainer,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                mensaje ?: "",
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            OutlinedButton(onClick = {
+                                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .putExtra(Settings.EXTRA_APP_PACKAGE, contexto.packageName)
+                                contexto.startActivity(intent)
+                            }) {
+                                Text("Abrir ajustes")
+                            }
+                        }
+                    }
                 }
             }
 
-            // Avisos (Paso 3)
+            // Avisos
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -164,7 +192,7 @@ fun PantallaAvisos(vm: AvisosViewModel) {
                 }
             }
 
-            // Recordatorio (Paso 5)
+            // Recordatorio
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -194,7 +222,7 @@ fun PantallaAvisos(vm: AvisosViewModel) {
                 }
             }
 
-            // Receptor de anuncios (Paso 6)
+            // Receptor de anuncios
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),

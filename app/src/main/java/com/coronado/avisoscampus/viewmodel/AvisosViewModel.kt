@@ -87,4 +87,7 @@ class AvisosViewModel(private val repo: AvisosRepository) : ViewModel() {
             _eventos.emit(aviso)
         }
     }
+    fun noSePudoMostrar() {
+        _mensaje.value = "Sin permiso: el aviso se guardó en el historial, pero no se mostró"
+    }
 }
