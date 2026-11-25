@@ -1,0 +1,83 @@
+package com.coronado.avisoscampus.ui
+
+import android.Manifest
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.coronado.avisoscampus.model.PermisoUi
+import com.coronado.avisoscampus.notificacion.Notificador
+import com.coronado.avisoscampus.receiver.ModoAvionReceiver
+import com.coronado.avisoscampus.ui.theme.Gris
+import com.coronado.avisoscampus.ui.theme.Rojo
+import com.coronado.avisoscampus.ui.theme.Verde
+import com.coronado.avisoscampus.viewmodel.AvisosViewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PantallaAvisos(vm: AvisosViewModel) {
+    val contexto = LocalContext.current
+
+    val permiso by vm.permiso.collectAsState()
+    val mensaje by vm.mensaje.collectAsState()
+    val faltan by vm.faltan.collectAsState()
+    val escuchando by vm.escuchandoAvion.collectAsState()
+    val avisos by vm.avisos.collectAsState()
+
+    // Paso 2: permiso
+    val lanzador = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+        vm.permisoRespondido(concedido)
+    }
+
+    LaunchedEffect(Unit) {
+        if (Notificador.tienePermiso(contexto)) {
+            vm.permisoRespondido(true)
+        }
+    }
+
+    // Eventos: el ViewModel pide, la pantalla (con Context) muestra
+    LaunchedEffect(Unit) {
+        vm.eventos.collect { aviso ->
+            val mostrado = Notificador.mostrar(contexto, aviso)
+            if (!mostrado) {
+                vm.noSePudoMostrar()
+            }
+        }
+    }
+}
