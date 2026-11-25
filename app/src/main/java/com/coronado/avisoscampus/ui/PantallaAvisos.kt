@@ -1,6 +1,8 @@
 package com.coronado.avisoscampus.ui
 
 import android.Manifest
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,19 +23,24 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.coronado.avisoscampus.model.PermisoUi
 import com.coronado.avisoscampus.notificacion.Notificador
+import com.coronado.avisoscampus.receiver.ModoAvionReceiver
 import com.coronado.avisoscampus.ui.theme.Gris
 import com.coronado.avisoscampus.ui.theme.Rojo
 import com.coronado.avisoscampus.ui.theme.Verde
@@ -46,6 +53,7 @@ fun PantallaAvisos(vm: AvisosViewModel) {
 
     val permiso by vm.permiso.collectAsState()
     val faltan by vm.faltan.collectAsState()
+    val escuchando by vm.escuchandoAvion.collectAsState()
 
     // Paso 2: permiso
     val lanzador = rememberLauncherForActivityResult(
@@ -64,6 +72,23 @@ fun PantallaAvisos(vm: AvisosViewModel) {
     LaunchedEffect(Unit) {
         vm.eventos.collect { aviso ->
             Notificador.mostrar(contexto, aviso)
+            // TODO Paso 8: si no se mostró, avisar al ViewModel
+        }
+    }
+
+    // Paso 6: receptor del modo avión
+    DisposableEffect(escuchando) {
+        if (escuchando) {
+            val receptor = ModoAvionReceiver { activo -> vm.alCambiarModoAvion(activo) }
+            ContextCompat.registerReceiver(
+                contexto,
+                receptor,
+                IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+            onDispose { contexto.unregisterReceiver(receptor) }
+        } else {
+            onDispose { }
         }
     }
 
@@ -165,6 +190,31 @@ fun PantallaAvisos(vm: AvisosViewModel) {
                         }
                     }
                     faltan?.let { Text("Faltan $it s") }
+                }
+            }
+
+            // Receptor de anuncios (Paso 6)
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        "Receptor de anuncios",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Escuchar el modo avión")
+                        Switch(
+                            checked = escuchando,
+                            onCheckedChange = { vm.cambiarEscucha(it) }
+                        )
+                    }
                 }
             }
 
