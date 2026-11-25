@@ -16,6 +16,7 @@ import com.coronado.avisoscampus.MainActivity
 import com.coronado.avisoscampus.R
 import com.coronado.avisoscampus.model.Aviso
 import com.coronado.avisoscampus.model.Origen
+import com.coronado.avisoscampus.receiver.PosponerReceiver
 
 object Notificador {
     const val CANAL_URGENTES = "canal_urgentes"
@@ -100,7 +101,7 @@ object Notificador {
             context, 0, intent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notificacion = NotificationCompat.Builder(context, canalId)
+        val builder = NotificationCompat.Builder(context, canalId)
             .setSmallIcon(R.drawable.ic_notificacion)
             .setContentTitle(aviso.titulo)
             .setContentText(aviso.texto)
@@ -111,9 +112,31 @@ object Notificador {
             .setPriority(prioridad)
             .setContentIntent(pendiente)
             .setAutoCancel(true)
-            .build()
 
-        NotificationManagerCompat.from(context).notify(aviso.id, notificacion)
+        // Acción de posponer recordatorios (10 s) para canal urgente / recordatorios
+        if (canalId == CANAL_URGENTES) {
+            val posponerIntent = Intent(context, PosponerReceiver::class.java).apply {
+                action = PosponerReceiver.ACTION_POSPONER
+                putExtra(PosponerReceiver.EXTRA_NOTIFICATION_ID, aviso.id)
+                putExtra(PosponerReceiver.EXTRA_TITULO, aviso.titulo)
+                putExtra(PosponerReceiver.EXTRA_MENSAJE, aviso.texto)
+            }
+
+            val posponerPendingIntent = PendingIntent.getBroadcast(
+                context,
+                aviso.id,
+                posponerIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            builder.addAction(
+                R.drawable.ic_notificacion,
+                "Posponer 10 s",
+                posponerPendingIntent
+            )
+        }
+
+        NotificationManagerCompat.from(context).notify(aviso.id, builder.build())
         return true
     }
 }
