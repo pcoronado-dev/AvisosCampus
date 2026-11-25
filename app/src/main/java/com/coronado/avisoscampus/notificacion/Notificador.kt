@@ -7,6 +7,13 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
+import com.coronado.avisoscampus.notificacion.Notificador.tienePermiso
+import android.annotation.SuppressLint
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.coronado.avisoscampus.MainActivity
+import com.coronado.avisoscampus.R
+import com.coronado.avisoscampus.model.Aviso
 
 object Notificador {
     const val CANAL = "avisos"
@@ -26,4 +33,20 @@ object Notificador {
             context, Manifest.permission.POST_NOTIFICATIONS
         ) == PackageManager.PERMISSION_GRANTED
     }
+}
+
+@SuppressLint("MissingPermission")
+fun mostrar(context: Context, aviso: Aviso): Boolean {
+    if (!tienePermiso(context)) return false
+
+    val notificacion = NotificationCompat.Builder(context, CANAL)
+        .setSmallIcon(R.drawable.ic_notificacion)
+        .setContentTitle(aviso.titulo)
+        .setContentText(aviso.texto)
+        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        .setAutoCancel(true)
+        .build()
+
+    NotificationManagerCompat.from(context).notify(aviso.id, notificacion)
+    return true
 }

@@ -80,4 +80,21 @@ fun PantallaAvisos(vm: AvisosViewModel) {
             }
         }
     }
+
+    // Avisos
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                "Avisos",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Button(onClick = { vm.avisarAhora() }) {
+                Text("Mostrar aviso")
+            }
+        }
+    }
 }
