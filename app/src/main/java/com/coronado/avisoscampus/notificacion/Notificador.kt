@@ -28,7 +28,7 @@ object Notificador {
             val canalUrgentes = NotificationChannel(
                 CANAL_URGENTES,
                 "Urgentes",
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_HIGH,
             ).apply {
                 description = "Notificaciones importantes, como recordatorios."
             }
@@ -36,7 +36,7 @@ object Notificador {
             val canalAvisos = NotificationChannel(
                 CANAL_AVISOS,
                 "Avisos",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
                 description = "Notificaciones generales de la aplicación."
             }
@@ -51,11 +51,11 @@ object Notificador {
     }
 
     fun tienePermiso(context: Context): Boolean {
-        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                ContextCompat.checkSelfPermission(
+        return (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) ||
+                (ContextCompat.checkSelfPermission(
                     context,
                     Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
+                ) == PackageManager.PERMISSION_GRANTED)
     }
 
     @SuppressLint("MissingPermission")
@@ -64,7 +64,7 @@ object Notificador {
             context = context,
             aviso = aviso,
             canalId = CANAL_URGENTES,
-            prioridad = NotificationCompat.PRIORITY_HIGH
+            prioridad = NotificationCompat.PRIORITY_HIGH,
         )
     }
 
@@ -74,7 +74,7 @@ object Notificador {
             context = context,
             aviso = aviso,
             canalId = CANAL_AVISOS,
-            prioridad = NotificationCompat.PRIORITY_DEFAULT
+            prioridad = NotificationCompat.PRIORITY_DEFAULT,
         )
     }
 
@@ -104,6 +104,10 @@ object Notificador {
             .setSmallIcon(R.drawable.ic_notificacion)
             .setContentTitle(aviso.titulo)
             .setContentText(aviso.texto)
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(aviso.texto)
+            )
             .setPriority(prioridad)
             .setContentIntent(pendiente)
             .setAutoCancel(true)
