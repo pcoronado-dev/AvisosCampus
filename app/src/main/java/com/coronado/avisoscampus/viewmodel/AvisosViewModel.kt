@@ -33,12 +33,7 @@ class AvisosViewModel(private val repo: AvisosRepository) : ViewModel() {
 
     // Paso 2
     fun permisoRespondido(concedido: Boolean) {
-        if (concedido) {
-            _permiso.value = PermisoUi.Concedido
-            _mensaje.value = null
-        } else {
-            _permiso.value = PermisoUi.Denegado
-        }
+        _permiso.value = if (concedido) PermisoUi.Concedido else PermisoUi.Denegado
     }
     fun avisarAhora() {
         viewModelScope.launch {
@@ -46,4 +41,34 @@ class AvisosViewModel(private val repo: AvisosRepository) : ViewModel() {
             _eventos.emit(aviso)
         }
     }
+    private var trabajo: Job? = null
+
+    private val _faltan = MutableStateFlow<Int?>(null)
+    val faltan: StateFlow<Int?> = _faltan.asStateFlow()
+
+    fun recordarEn(segundos: Int = 10) {
+        if (trabajo?.isActive == true) return
+        trabajo = viewModelScope.launch {
+            try {
+                for (s in segundos downTo 1) {
+                    _faltan.value = s
+                    delay(1000)
+                }
+                val aviso = repo.registrar(
+                    "Recordatorio",
+                    "Revisa tu laboratorio pendiente",
+                    Origen.RECORDATORIO
+                )
+                _eventos.emit(aviso)
+            } finally {
+                _faltan.value = null
+            }
+        }
+    }
+
+    fun cancelarRecordatorio() {
+        trabajo?.cancel()
+    }
+
+
 }
