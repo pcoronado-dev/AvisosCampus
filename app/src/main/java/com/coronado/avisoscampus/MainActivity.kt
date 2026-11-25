@@ -3,45 +3,25 @@ package com.coronado.avisoscampus
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.activity.viewModels
+import com.coronado.avisoscampus.data.AvisosRepositoryMemoria
+import com.coronado.avisoscampus.ui.PantallaAvisos
 import com.coronado.avisoscampus.ui.theme.AvisosCampusTheme
+import com.coronado.avisoscampus.viewmodel.AvisosViewModel
+import com.coronado.avisoscampus.viewmodel.AvisosViewModelFactory
 
 class MainActivity : ComponentActivity() {
+
+    private val vm: AvisosViewModel by viewModels {
+        AvisosViewModelFactory(AvisosRepositoryMemoria())
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             AvisosCampusTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                PantallaAvisos(vm)
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    AvisosCampusTheme {
-        Greeting("Android")
     }
 }
